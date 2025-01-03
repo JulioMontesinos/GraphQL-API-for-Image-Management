@@ -123,6 +123,11 @@ const startServer = async () => {
   // Enable CORS
   app.use(cors({ origin: '*' }));
 
+  // Define a route for the root ("/")
+  app.get('/', (req, res) => {
+    res.send('Welcome to the GraphQL API. Go to /graphql to interact with the API.');
+  });
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
