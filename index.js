@@ -1,4 +1,6 @@
-const { ApolloServer, gql } = require('apollo-server');
+import { ApolloServer, gql } from 'apollo-server-express';
+import express from 'express';
+import cors from 'cors';
 
 // Define the schema
 const typeDefs = gql`
@@ -114,10 +116,25 @@ const resolvers = {
   },
 };
 
-// Create the Apollo Server
-const server = new ApolloServer({ typeDefs, resolvers });
+// Start the Apollo Server with Express
+const startServer = async () => {
+  const app = express();
 
-// Start the server
-server.listen().then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+  // Enable CORS
+  app.use(cors({ origin: '*' }));
+
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+  });
+
+  await server.start();
+  server.applyMiddleware({ app });
+
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => {
+    console.log(`🚀 Server ready at http://localhost:${port}${server.graphqlPath}`);
+  });
+};
+
+startServer();
