@@ -47,8 +47,8 @@ const typeDefs = gql`
   }
 
   type Query {
-    images: ImageConnection!
-  }
+  images(first: Int, after: String, title: String): ImageConnection!
+}
 
   type Mutation {
     likeImage(input: LikeImageInput!): LikeImagePayload
@@ -84,33 +84,32 @@ const images = [
 // Define the resolvers
 const resolvers = {
   Query: {
-    images: () => {
+    images: (_, { first, after, title }) => {
+      let filteredImages = images;
+
+      // Filtrar por título si se proporciona
+      if (title) {
+        filteredImages = filteredImages.filter((image) =>
+          image.title.toLowerCase().includes(title.toLowerCase())
+        );
+      }
+
+      // Implementar paginación
+      const startIndex = after ? filteredImages.findIndex((img) => img.id === after) + 1 : 0;
+      const paginatedImages = filteredImages.slice(startIndex, startIndex + (first || filteredImages.length));
+
       return {
-        edges: images.map((image) => ({
+        edges: paginatedImages.map((image) => ({
           cursor: image.id,
           node: image,
         })),
-        nodes: images,
+        nodes: paginatedImages,
         pageInfo: {
-          startCursor: images[0]?.id || null,
-          endCursor: images[images.length - 1]?.id || null,
-          hasNextPage: false,
-          hasPreviousPage: false,
+          startCursor: paginatedImages[0]?.id || null,
+          endCursor: paginatedImages[paginatedImages.length - 1]?.id || null,
+          hasNextPage: startIndex + (first || 0) < filteredImages.length,
+          hasPreviousPage: startIndex > 0,
         },
-      };
-    },
-  },
-  Mutation: {
-    likeImage: (_, { input }) => {
-      const image = images.find((img) => img.id === input.imageId);
-      if (!image) throw new Error("Image not found");
-
-      image.liked = !image.liked;
-      image.likesCount += image.liked ? 1 : -1;
-
-      return {
-        clientMutationId: input.clientMutationId,
-        image,
       };
     },
   },
