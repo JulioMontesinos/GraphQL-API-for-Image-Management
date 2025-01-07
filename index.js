@@ -119,6 +119,7 @@ const startServer = async () => {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    introspection: true
   });
 
   await server.start();
