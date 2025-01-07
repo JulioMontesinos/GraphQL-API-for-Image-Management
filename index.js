@@ -1,6 +1,7 @@
 import { ApolloServer, gql } from 'apollo-server-express';
 import express from 'express';
 import cors from 'cors';
+import images from './data/images.js'; // Importar los datos
 
 // Define the schema
 const typeDefs = gql`
@@ -47,39 +48,13 @@ const typeDefs = gql`
   }
 
   type Query {
-  images(first: Int, after: String, title: String): ImageConnection!
-}
+    images(first: Int, after: String, title: String): ImageConnection!
+  }
 
   type Mutation {
     likeImage(input: LikeImageInput!): LikeImagePayload
   }
 `;
-
-// Sample data
-const images = [
-  {
-    id: "1",
-    author: "John Doe",
-    createdAt: new Date().toISOString(),
-    liked: false,
-    likesCount: 10,
-    picture: "https://example.com/image1.jpg",
-    price: 100,
-    title: "Beautiful Sunset",
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    author: "Jane Smith",
-    createdAt: new Date().toISOString(),
-    liked: true,
-    likesCount: 25,
-    picture: "https://example.com/image2.jpg",
-    price: 150,
-    title: "Mountain View",
-    updatedAt: new Date().toISOString(),
-  },
-];
 
 // Define the resolvers
 const resolvers = {
@@ -110,6 +85,20 @@ const resolvers = {
           hasNextPage: startIndex + (first || 0) < filteredImages.length,
           hasPreviousPage: startIndex > 0,
         },
+      };
+    },
+  },
+  Mutation: {
+    likeImage: (_, { input }) => {
+      const image = images.find((img) => img.id === input.imageId);
+      if (!image) throw new Error("Image not found");
+
+      image.liked = !image.liked;
+      image.likesCount += image.liked ? 1 : -1;
+
+      return {
+        clientMutationId: input.clientMutationId,
+        image,
       };
     },
   },
